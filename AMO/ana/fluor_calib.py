@@ -3,16 +3,7 @@ from scipy.optimize import curve_fit
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-
 import fitPeak as fp
-
-# def fitWrapper(x, N, *args):
-#     bck = args[0]
-#     gaus = []
-#     for i in range(N):
-#         gaus.append(args[3*i, 3*i+2])
-#     return fit(x, bck, gaus)
-
 
 
 def initialize_data(fname):

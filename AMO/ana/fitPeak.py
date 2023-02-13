@@ -21,6 +21,7 @@ def fit(x, *args):
         f += i[0]*np.exp((-(x - i[1])**2) / (2*i[2]))
     return f + args[0] + args[1]*x + args[2]*x**2
 
+# taken from stackexchange
 def wlinear_fit (x,y,w) :
     """
     Fit (x,y,w) to a linear function, using exact formulae for weighted linear
