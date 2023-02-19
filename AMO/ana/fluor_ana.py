@@ -73,9 +73,6 @@ def analysis(fname):
         print(measuredPeaks[i])
         print("\n")
 
-    #dat.plot(figsize=(20, 6))
-    #plt.legend()
-    #plt.savefig("test.png")
 
 if __name__ == "__main__":
     #try:
