@@ -8,14 +8,16 @@ import fitPeak as fp
 
 def initialize_data(fname):
     df = pd.read_csv(fname, skiprows=[1, -1])
+    df.columns = [col[1:-1] for col in df.columns]
     # removes rows with all zeros, but preserves row numbers
     no_zero = df.loc[(df>20).any(axis=1)]
-    return no_zero
+    return df
 
 def calibration(fname):
     dat = initialize_data(fname)
+    dat = dat.loc[25:800]
 
-    calib = ['\'Fe\'', '\'Zn\'', '\'Cu\'']
+    calib = ['Fe', 'Zn', 'Cu']
     color = ["red", "green", "blue"]
     colorFit = ["purple", "orange", "m"]
     fitParams = []
@@ -24,25 +26,27 @@ def calibration(fname):
     for i in calib:
         elem = dat[i]
         x = np.array(elem.index.tolist())
-        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem))
+        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem, h=150))
         fitParams.append(popt)
         fitError.append(pcov)
 
-    fig, ax = plt.subplots(3, 1)
-    for i in range(len(calib)):
-        ax[i].plot(dat[calib[i]].index.tolist(),dat[calib[i]], color = color[i])
-        ax[i].plot(x, fp.fit(x, fitParams[i]), "--", color = colorFit[i])
-        ax[i].set_ylim([0, 1e4])
-        ax[i].set_yscale("symlog")
-        ax[i].grid(visible=True)
-        ax[i].margins(x=0)
-        ax[i].set_xlim([200, 400])
-        ax[i].set_title(calib[i])
-    fig.supylabel("Counts")
-    fig.supxlabel("Channel")
-    plt.tight_layout()
-    plt.savefig("testCalib.png", dpi = 100)
-    plt.close()
+
+    if __name__ == "__main__":
+        fig, ax = plt.subplots(3, 1)
+        for i in range(len(calib)):
+            ax[i].plot(dat[calib[i]].index.tolist(),dat[calib[i]], color = color[i])
+            ax[i].plot(x, fp.fit(x, fitParams[i]), "--", color = colorFit[i])
+            ax[i].set_ylim([0, 1e4])
+            ax[i].set_yscale("symlog")
+            ax[i].grid(visible=True)
+            ax[i].margins(x=0)
+            #ax[i].set_xlim([200, 400])
+            ax[i].set_title(calib[i])
+        fig.supylabel("Counts")
+        fig.supxlabel("Channel")
+        plt.tight_layout()
+        plt.savefig("testCalib.png", dpi = 100)
+        plt.close()
     
     # in kev, order of Fe, Zn, Cu
     truePeaks = np.array([[6.40, 7.06], [8.64, 9.57], [8.05, 8.90]])
@@ -60,18 +64,21 @@ def calibration(fname):
     p = np.argsort(measuredPeaks)
 
     a,b,cov_00,cov_11,cov_01,chi2 = fp.wlinear_fit(truePeaks[p],measuredPeaks[p],1.0/errorPeaks[p]**2)
-    x = np.linspace(5, 11, 1000)
-    y = b*x + a
 
-    plt.errorbar(truePeaks, measuredPeaks, yerr = errorPeaks, marker = "o", ls = 'None', label = 'Measured Peaks')
-    plt.plot(x, y, "--", label = 'Error Weighted Fit a:{0}, b:{1}'.format(round(a, 2), round(b, 2)))
-    plt.legend()
-    plt.xlabel("True Peaks (keV)")
-    plt.ylabel("Channel Number")
-    plt.title("Calibration with Fe, Zn, and Cu")
-    plt.grid()
-    plt.margins(x=0)
-    plt.savefig("testCorr.png")
+
+    if __name__ == "__main__":
+        x = np.linspace(5, 11, 1000)
+        y = b*x + a
+        plt.errorbar(truePeaks, measuredPeaks, yerr = errorPeaks, marker = "o", ls = 'None', label = 'Measured Peaks')
+        plt.plot(x, y, "--", label = 'Error Weighted Fit a:{0}, b:{1}'.format(round(a, 2), round(b, 2)))
+        plt.legend()
+        plt.xlabel("True Peaks (keV)")
+        plt.ylabel("Channel Number")
+        plt.title("Calibration with Fe, Zn, and Cu")
+        plt.grid()
+        plt.margins(x=0)
+        plt.savefig("testCorr.png")
+    return a, b
     
 
 

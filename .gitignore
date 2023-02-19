@@ -1,1 +1,4 @@
-./AMO/ana/test*.png
+test*.png
+*__pycache__*
+AMO/data/fluorescence/backup/
+

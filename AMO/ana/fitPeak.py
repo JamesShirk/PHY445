@@ -4,9 +4,13 @@ from itertools import chain
 import pandas as pd
 
 
-def initParam(elem, dx = 1):
-    peaks, _ = find_peaks(elem, height = 10, prominence = dx*50)
-    amps = elem.iloc[peaks].tolist()
+def initParam(elem, dx = 1, h = 120, peaks = None):
+    if peaks is None:
+        peaks, _ = find_peaks(elem, height = h, prominence = dx*30)
+        amps = elem.iloc[peaks].tolist()
+    else:
+        amps = elem.loc[peaks].tolist()
+        print(amps)
     means = elem.index[peaks]
     sigmas = np.ones_like(amps)*5
     bck = [10, 0, 0]
