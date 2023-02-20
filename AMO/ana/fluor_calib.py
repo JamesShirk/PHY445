@@ -15,9 +15,11 @@ def initialize_data(fname):
 
 def calibration(fname):
     dat = initialize_data(fname)
-    dat = dat.loc[25:800]
+    dat = dat.loc[25:660]
 
-    calib = ['Fe', 'Zn', 'Cu']
+    #calib = ['Fe', 'Zn', 'Cu']
+    #calib = ['Fe', 'Zn', 'Ti']
+    calib = ['Fe', 'Zr', 'Ti']
     color = ["red", "green", "blue"]
     colorFit = ["purple", "orange", "m"]
     fitParams = []
@@ -26,7 +28,7 @@ def calibration(fname):
     for i in calib:
         elem = dat[i]
         x = np.array(elem.index.tolist())
-        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem, h=150))
+        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem, h=100))
         fitParams.append(popt)
         fitError.append(pcov)
 
@@ -49,7 +51,14 @@ def calibration(fname):
         plt.close()
     
     # in kev, order of Fe, Zn, Cu
-    truePeaks = np.array([[6.40, 7.06], [8.64, 9.57], [8.05, 8.90]])
+    #truePeaks = np.array([[6.40, 7.06], [8.64, 9.57], [8.05, 8.90]])
+
+    # in kev order Fe, Zn, Ti
+    #truePeaks = np.array([[6.40, 7.06], [8.64, 9.57], [4.51, 4.93]])
+
+    # in kev order Fe, Zr, Ti
+    truePeaks = np.array([[6.40, 7.06], [15.78, 17.67], [4.51, 4.93]])
+    
     measuredPeaks = []
     errorPeaks = []
     for i in range(len(fitParams)):
@@ -67,7 +76,7 @@ def calibration(fname):
 
 
     if __name__ == "__main__":
-        x = np.linspace(5, 11, 1000)
+        x = np.linspace(4, 18, 1000)
         y = b*x + a
         plt.errorbar(truePeaks, measuredPeaks, yerr = errorPeaks, marker = "o", ls = 'None', label = 'Measured Peaks')
         plt.plot(x, y, "--", label = 'Error Weighted Fit a:{0}, b:{1}'.format(round(a, 2), round(b, 2)))

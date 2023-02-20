@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import fitPeak as fp
 import fluor_calib as calib
+import csv
 
 def initialize_data(fname):
     df = pd.read_csv(fname, skiprows=[1, -1])
@@ -45,7 +46,7 @@ def analysis(fname):
         ax[i].plot(dat[name[i]].index.tolist(),dat[name[i]])#, color = color[i])
         ax[i].plot(x, fp.fit(x, fitParams[i]), "--")#, color = colorFit[i])
         #ax[i].set_ylim([0, 1e4])
-        ax[i].set_yscale("symlog")
+        #ax[i].set_yscale("symlog")
         ax[i].grid(visible=True)
         ax[i].margins(x=0)
         #ax[i].set_xlim([200, 400])
@@ -71,7 +72,9 @@ def analysis(fname):
     for i in range(len(measuredPeaks)):
         print(name[i])
         print(measuredPeaks[i])
-        print("\n")
+        print(errorPeaks[i])
+
+
 
 
 if __name__ == "__main__":
