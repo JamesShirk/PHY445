@@ -47,7 +47,7 @@ def calibration(fname):
         fig.supylabel("Counts")
         fig.supxlabel("Channel")
         plt.tight_layout()
-        plt.savefig("testCalib.png", dpi = 100)
+        plt.savefig("plots/calibFinal.png", dpi = 100)
         plt.close()
     
     # in kev, order of Fe, Zn, Cu
@@ -73,20 +73,23 @@ def calibration(fname):
     p = np.argsort(measuredPeaks)
 
     a,b,cov_00,cov_11,cov_01,chi2 = fp.wlinear_fit(truePeaks[p],measuredPeaks[p],1.0/errorPeaks[p]**2)
-
+    
 
     if __name__ == "__main__":
         x = np.linspace(4, 18, 1000)
         y = b*x + a
+        print(cov_00)
+        print(cov_11)
         plt.errorbar(truePeaks, measuredPeaks, yerr = errorPeaks, marker = "o", ls = 'None', label = 'Measured Peaks')
-        plt.plot(x, y, "--", label = 'Error Weighted Fit a:{0}, b:{1}'.format(round(a, 2), round(b, 2)))
+        plt.plot(x, y, "--", label = r'Error Weighted Fit a:{0}$\pm${1}, b:{2}$\pm${3}'.format(round(a, 2), round(np.sqrt(cov_00), 2), round(b, 2), round(np.sqrt(cov_11), 2)))
+        plt.text(12.1, 350, r"$\chi^2 = {}$".format(round(chi2, 2)))
         plt.legend()
         plt.xlabel("True Peaks (keV)")
         plt.ylabel("Channel Number")
-        plt.title("Calibration with Fe, Zn, and Cu")
+        plt.title("Calibration with Fe, Zr, and Ti")
         plt.grid()
         plt.margins(x=0)
-        plt.savefig("testCorr.png")
+        plt.savefig("plots/corrFinal.png")
     return a, b
     
 
