@@ -1,6 +1,7 @@
 import fitPeak as fp
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 # 'Pb','Fe','In','Brass','Nb','Au','V','Ag','Zn','Zr','Ti','Rh','Ni','W','U','Cu'
 
 peaks = [
@@ -132,7 +133,7 @@ def moseley():
     axs[0].plot(xfit_K, fit[1][1]*xfit_K + fit[1][0], "--", label = r"$K_{\beta}$ fit")#, $\chi^2$ = {}".format(fit[1][-1]))
     axs[0].grid()
     axs[0].legend()
-    axs[0].text(35.2, 2.8, r"$\chi^2_{\alpha}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[0][-1]/7, 2)))
+    axs[0].text(35.2, 2.9, r"$\chi^2_{\alpha}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[0][-1]/7, 2)))
     axs[0].text(35.2, 2.6,r"$\chi^2_{\beta}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[1][-1]/7, 2)))
     
     lab = [r"$L_{\alpha}$", r"$L_{\beta}$", r"$L_{\gamma}$"]
@@ -142,9 +143,9 @@ def moseley():
 
     axs[1].legend()
     axs[1].grid()
-    axs[1].text(81, 2.5, r"$\chi^2_{\alpha}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[2][-1]/5, 2)))
+    axs[1].text(81, 2.6, r"$\chi^2_{\alpha}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[2][-1]/5, 2)))
     axs[1].text(81, 2.3,r"$\chi^2_{\beta}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[3][-1]/4, 2)))
-    axs[1].text(81, 2.1,r"$\chi^2_{\gamma}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[4][-1]/3, 2)))
+    axs[1].text(81, 2.0,r"$\chi^2_{\gamma}\ /\ \mathrm{DoF}$" + " = {0}".format(round(fit[4][-1]/3, 2)))
     fig.suptitle("Moseley's law")
     fig.supxlabel("Z")
     fig.supylabel(r"$\sqrt{E \ (keV)}$")
@@ -178,4 +179,5 @@ def moseley():
         ))
 
 if __name__ == "__main__":
+    matplotlib.rcParams.update({'font.size': 18})
     moseley()

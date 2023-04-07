@@ -2,3 +2,4 @@ test*.png
 *__pycache__*
 AMO/data/fluorescence/backup/
 *.DS_Store*
+*.png

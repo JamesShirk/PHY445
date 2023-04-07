@@ -7,6 +7,8 @@ import fitPeak as fp
 import fluor_calib as calib
 import csv
 
+import matplotlib
+
 def initialize_data(fname):
     df = pd.read_csv(fname, skiprows=[1, -1])
     df.columns = [col[1:-1] for col in df.columns]
@@ -140,6 +142,7 @@ def analysis(fname, plot = False):
 if __name__ == "__main__":
     #try:
     #initialize_data(sys.argv[1])
+    matplotlib.rcParams.update({'font.size': 18})
     analysis(sys.argv[1], True)
     #except:
     #    print("Run as \'python3 fluor_calib.py datafile\'")
