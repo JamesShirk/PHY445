@@ -30,18 +30,28 @@ def get_closest(df, val, col):
 def t2prime(fname, outname):
     dat = initialize_data(fname)
     # Should only find one peak
-    peak = find_peaks(dat["CH1"], height=1, prominence = 3, distance = 100)[0]
+
+    plt.plot(dat["X"], dat["CH1"])
+    plt.grid()
+    plt.xlabel("Time (ms)")
+    plt.ylabel("Amplified Signal (V)")
+    plt.savefig("./T2/raw/raw_T2_"+outname+".png")
+    plt.close()
+
+    peak = find_peaks(dat["CH1"], height=1, prominence = 1, distance = 100)[0]
+    
     if len(peak) > 1:
         print("Error, found multiple peaks, check data")
-        sys.quit(0)
+        sys.exit(0)
 
     # focus only on main peak region
-    dat = dat.iloc[peak[0]+10:peak[0]+200]
+    dat = dat.iloc[peak[0]+20:peak[0]+250]
     # initial amplitude guess is initial amplitude, initial x displacement is first time value
     A = dat.iloc[0]["CH1"]
     t0 = dat.iloc[0]["X"]
     #initial guess for t2 is time after which amplitude drops by e
     t2_g = float(dat.loc[dat.index == get_closest(dat, A/np.e, "CH1")]["X"])
+    print(A, t0, t2_g)
     # fit using x-axis shifted exponential since pulse isnt exactly at t=0
     popt, pcov = curve_fit(f, dat["X"], dat["CH1"], p0 = [t0, A, t2_g, 0])
 

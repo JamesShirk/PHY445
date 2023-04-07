@@ -17,20 +17,21 @@ def initialize_data(fname):
     # get only 1st and second column
     df = df.iloc[1:, 0:2]
     # correct time scale
+    a = 1 if len(initParams) == 6 else 0
     df = df.astype({"X": float, "CH1":float})
-    df["X"] = df["X"] * float(initParams[3])
-    df["X"] = df["X"] + float(initParams[2])
+    df["X"] = df["X"] * float(initParams[3+a])
+    df["X"] = df["X"] + float(initParams[2+a])
     return df
 
-def t2prime(fname, outname):
+def t2prime(fname, outname, h = 1.0):
     dat = initialize_data(fname)
-    peaks, _ = find_peaks(dat["CH1"], height = 1.0)
+    peaks, _ = find_peaks(dat["CH1"], height = h, prominence = h)
     
     plt.plot(dat["X"], dat["CH1"])
     plt.grid()
     plt.xlabel("Time (ms)")
     plt.ylabel("Amplified Signal (V)")
-    plt.savefig("./T2Prime/raw_t2p_"+outname+".png")
+    plt.savefig("./T2Prime/raw/raw_t2p_"+outname+".png")
     plt.close()
     
     onlyPeaks = dat.iloc[peaks[1:]]
@@ -49,7 +50,7 @@ def t2prime(fname, outname):
     plt.grid()
     plt.xlabel("Time (ms)")
     plt.ylabel("Amplified Signal (V)")
-    plt.savefig("./T2Prime/main_t2p_"+outname+".png")
+    plt.savefig("./T2Prime/main/main_t2p_"+outname+".png")
     plt.close()
     
     fig, ax = plt.subplots()
@@ -58,12 +59,16 @@ def t2prime(fname, outname):
     plt.plot(x_fit, f(x_fit, popt[0], popt[1], popt[2]), label = "Fit")
     plt.grid()
     plt.legend()
-    plt.text(0.6, 0.7, r"$T_2^\prime =$ {} $ms \pm$ {}".format(round(popt[1]*1e3, 2), round(np.sqrt(pcov[1][1])*1e3, 2)), transform = ax.transAxes)
+    #plt.text(0.6, 0.7, r"$T_2^\prime =$ {0:.1f} $ \pm$ {1:.1f} ms".format(round(popt[1]*1e3, 1), round(np.sqrt(pcov[1][1])*1e3, 1)), transform = ax.transAxes)
+    plt.text(0.6, 0.7, r"$T_2^\prime =$ {0} $ \pm$ {1} ms".format(round(popt[1]*1e3), round(np.sqrt(pcov[1][1])*1e3)), transform = ax.transAxes)
     plt.xlabel("Time (s)")
     plt.ylabel("Amplified Signal (V)")
-    plt.savefig("./T2Prime/tot_t2_"+outname+".png")
+    plt.savefig("./T2Prime/tot/tot_t2_"+outname+".png")
     plt.close()
 
 
 if __name__ == "__main__":
-    t2prime(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 4:
+        t2prime(sys.argv[1], sys.argv[2], float(sys.argv[3]))
+    else:
+        t2prime(sys.argv[1], sys.argv[2])

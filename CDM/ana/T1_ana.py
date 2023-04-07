@@ -5,8 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-def f(t, M0, t2p):
-    return np.abs(M0*(1- 2*np.exp(-t/t2p)))
+def f(t, M0, t1, a):
+    return np.abs(M0*(1- 2*np.exp(-t/t1))) + a
 
 # finds nearest value in array to given value
 def find_nearest(array, value):
@@ -43,21 +43,28 @@ def initialize_data(dir, outname):
         max.append(df.loc[df["CH1"].idxmax()]["CH1"])
     max = np.array(max)
     x = np.linspace(nums[0], nums[-1], 1000)
-
+    T1_guess = nums[find_nearest(max, max.min()*np.e)]
+    if outname == "wt":
+        a = 1.5
+        T1_guess = 3000
+    else:
+        a=0
     # fit w/ initial amplitude guess as max of array, initial T1 = time for signal to increase by factor of e
-    popt, pcov = curve_fit(f, nums, max, p0 = [max.max(), nums[find_nearest(max, max.min()*np.e)]])
+    popt, pcov = curve_fit(f, nums, max, p0 = [max.max(), T1_guess, a])
 
     # plotting
     fig, ax = plt.subplots()
     plt.plot(nums, max, "o", label = "data")
-    plt.plot(x, f(x, popt[0], popt[1]), label = "fit")
+    plt.plot(x, f(x, *popt), label = "fit")
     plt.grid()
     plt.legend()
     plt.xlabel(r"$\pi-\pi/2$ signal delay (ms)")
     plt.ylabel("Amplified Signal (V)")
-    plt.text(0.6, 0.7, r"$T_2 = {0:.2f} \pm {1:.2f}\quad (ms)$".format(
-        round(popt[1], 2),
-        round(np.sqrt(pcov[1][1]), 2)
+    plt.text(0.6, 0.7, r"$T_1 = {0} \pm {1}\quad (ms)$".format(
+        #round(popt[1], 3),
+        round(popt[1]//10 * 10),
+        #round(np.sqrt(pcov[1][1]), 1)
+        round(np.sqrt(pcov[1][1])//10 * 10)
         ), transform = ax.transAxes)
     plt.savefig("T1/main_T1_"+outname+".png")
 
