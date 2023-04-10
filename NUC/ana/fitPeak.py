@@ -4,9 +4,9 @@ from itertools import chain
 import pandas as pd
 
 
-def initParam(elem, dx = 1, h = 120, peaks = None):
+def initParam(elem, p = 30, h = 120, peaks = None):
     if peaks is None:
-        peaks, _ = find_peaks(elem, height = h, prominence = dx*30)
+        peaks, _ = find_peaks(elem, height = h, prominence = p)
         amps = elem.iloc[peaks].tolist()
     else:
         amps = elem.loc[peaks].tolist()
@@ -17,12 +17,22 @@ def initParam(elem, dx = 1, h = 120, peaks = None):
     return np.array(list(chain(bck, amps, means, sigmas)), dtype = np.float64)
 
 def fit(x, *args):
+    # alright fine ill finally break down how this function works since i cant even remember
+    # scipy curve_fit only works with a fixed number of fit parameters, but our spectra has multiple peaks
+    # we fit these peaks with gaussians 3 parameters each, so we have to do some *args fuckery to get it to work
+
+    # anyways, the paramters end up being in an n*3 + 3 array where n = number of peaks
+    # array goes like [polynomial coefficients (a + bx + cx^2), amplitude_i, mean_i, stdev_i]
+
+
     if type(args[0]) is np.ndarray:
         args = np.array(args[0], dtype = np.float64)
+
+
     f = np.zeros_like(x, dtype = np.float64)
     gauss = np.array(args[3:], dtype = np.float64).reshape(3, len(args[3:])//3).T
     for i in gauss:
-        f += i[0]*np.exp((-(x - i[1])**2) / (2*i[2]))
+        f += i[0]*np.exp((-(x - i[1])**2) / (2*i[2]**2))
     return f + args[0] + args[1]*x + args[2]*x**2
 
 # taken from stackexchange
