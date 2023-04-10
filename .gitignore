@@ -3,3 +3,4 @@ test*.png
 AMO/data/fluorescence/backup/
 *.DS_Store*
 *.png
+NUC/data/backup/
