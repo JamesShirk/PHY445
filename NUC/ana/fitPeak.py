@@ -9,6 +9,7 @@ def initParam(elem, p = 30, h = 120, peaks = None):
         peaks, _ = find_peaks(elem, height = h, prominence = p)
         amps = elem.iloc[peaks].tolist()
     else:
+        peaks, _ = find_peaks(elem, height = h, prominence = p)
         amps = elem.loc[peaks].tolist()
         print(amps)
     means = elem.index[peaks]
@@ -22,7 +23,7 @@ def fit(x, *args):
     # we fit these peaks with gaussians 3 parameters each, so we have to do some *args fuckery to get it to work
 
     # anyways, the paramters end up being in an n*3 + 3 array where n = number of peaks
-    # array goes like [polynomial coefficients (a + bx + cx^2), amplitude_i, mean_i, stdev_i]
+    # array goes like [polynomial coefficients (a + bx + cx^2), amplitude_i, mean_i, stdev_i, amplitude_i+1, ...]
 
 
     if type(args[0]) is np.ndarray:
@@ -33,6 +34,7 @@ def fit(x, *args):
     gauss = np.array(args[3:], dtype = np.float64).reshape(3, len(args[3:])//3).T
     for i in gauss:
         f += i[0]*np.exp((-(x - i[1])**2) / (2*i[2]**2))
+    #return f + args[0]*np.exp(-args[1]*x +args[2])
     return f + args[0] + args[1]*x + args[2]*x**2
 
 # taken from stackexchange

@@ -8,11 +8,11 @@ import matplotlib
 
 def initialize_data(fname):
     df = pd.read_csv(fname, skiprows=[1, -1])
-    print(df)
-    print(df.columns)
+    #print(df)
+    #print(df.columns)
     # removes quotes from name
     df.columns = [col[1:-1] for col in df.columns]
-    print(df)
+    #print(df)
     return df
 
 def calibration(fname):
@@ -37,7 +37,7 @@ def calibration(fname):
         fitParams.append(popt)
         fitError.append(pcov)
 
-
+    # only plot if this is the main function
     if __name__ == "__main__":
         fig, ax = plt.subplots(len(calib), 1, figsize = (10, 10))
         for i in range(len(calib)):
@@ -73,7 +73,7 @@ def calibration(fname):
 
     a,b,cov_00,cov_11,cov_01,chi2 = fp.wlinear_fit(truePeaks[p],measuredPeaks[p],1.0/errorPeaks[p]**2)
     
-
+    # only plot if this is the main function
     if __name__ == "__main__":
         x = np.linspace(0, 1400, 1000)
         y = b*x + a
@@ -100,7 +100,7 @@ def calibration(fname):
         plt.grid()
         plt.margins(x=0)
         plt.savefig("plots/corrFinal.png")
-    return a, b
+    return a, b, np.sqrt(cov_00), np.sqrt(cov_11)
     
 
 
