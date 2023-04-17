@@ -11,40 +11,39 @@ import matplotlib.pyplot as plt
 import matplotlib
 # for intergrating peaks for # of counts
 from scipy.integrate import quad
-
 # custom modules
 import fitPeak as fp
 import calib
+from eff import eff
+from crossSectionFits import thompson, kleinNishina, fitXS
 
-def bckOnly(x, a, b, c):
-    return a + b*x + c*x**2
 
 def initialize_data(fname, names):
     df = pd.read_csv(fname, header = [0, 1], skiprows=[-1])
-    #df.columns = [col[1:-1] for col in df.columns]
-    #df = df.loc[0:1020]
     for i in names:
         df[i+"bcksub"] = df[i, "main"] - df[i, "bck"]
-    df1 = df.loc[:, names[0]+"bcksub":names[-1]+"bcksub"]
-    return df1
+    #print(df.shape)
+    return df
 
 def Ngamma(runTime = 900):
     df2 = pd.read_csv("../data/0deg.out", header = [0], skiprows=[1, -1])
     x = np.array(df2["0"].index.tolist())
     h0 = 10000
-    popt, pcov = curve_fit(fp.fit, xdata=x, ydata=df2["0"], p0 = fp.initParam(df2["0"], p = h0, h=h0, peaks=True))
-    gauss = np.array(popt[3:], dtype = np.float64).reshape(3, len(popt[3:])//3)
+    popt, pcov = curve_fit(fp.fit, xdata=x, ydata=df2["0"], p0 = fp.initParam(df2["0"], p = h0, h=h0, peaks=None))
+    gauss = np.array(popt[3:], dtype = np.float64)#.reshape(3, len(popt[3:])//3)
     Nsigma = 10
-    N = quad(fp.fit, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], popt)
-    bck = quad(bckOnly, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], (popt[0], popt[1], popt[2]))
-    return (N[0] - bck[0])/ runTime
+    #N = quad(fp.gauss, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], args = [gauss[0][0], gauss[1][0], gauss[2][0]])
+    N = quad(fp.gauss, gauss[1]-Nsigma*gauss[2], gauss[1]+Nsigma*gauss[2], args = (gauss[0], gauss[1], gauss[2]))
+    #bck = quad(bckOnly, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], (popt[0], popt[1], popt[2]))
+    #return (N[0] - bck[0])/ runTime
+    #return N[0]/runTime
+    return N[0]
 
-def counts(fname):
+def counts(fname, runs, runTime):
     # list of angles to calculate using
-    names = ["20", "30", "40", "50", "90"]
-    runTime = np.array([900, 900, 900, 1200, 1200])
+    names = [str(i) for i in runs]
     dat = initialize_data(fname, names)
-    
+    dat = dat.loc[20:]
 
     # ----------
     # fit each spectrum to polynomial background + gaussian
@@ -55,8 +54,8 @@ def counts(fname):
         elem = dat[names[i]+"bcksub"]
         x = np.array(elem.index.tolist())
         # hopefully height of photopeak > height of backscatter peak 
-        h0 = np.max(elem)-1
-        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem, p = h0/1.5, h=h0))#, sigma=np.sqrt(np.abs(elem)+0.001))
+        h0 = np.max(elem)
+        popt, pcov = curve_fit(fp.fit, xdata=x, ydata=elem, p0 = fp.initParam(elem, p = h0/1.2, h=h0, peaks = True))#, sigma=np.sqrt(np.abs(elem)+0.001))
         fitParams.append(popt)
         fitError.append(pcov)
 
@@ -99,54 +98,69 @@ def counts(fname):
         gauss = np.array(fitParams[i][3:], dtype = np.float64).reshape(3, len(fitParams[i][3:])//3)
         # integrate from mean-nsigma*sigma to mean+nsigma*sigma
         # in general Nsigma=5 should be sufficient
-        N = quad(fp.fit, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], fitParams[i])
-        bck = quad(bckOnly, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], (fitParams[i][0], fitParams[i][1], fitParams[i][2]))
-        counts.append(N[0]-bck[0])
+        #N = quad(fp.gauss, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], args = [gauss[0][0], gauss[1][0], gauss[2][0]])
+        N = quad(fp.gauss, gauss[1]-Nsigma*gauss[2], gauss[1]+Nsigma*gauss[2], args = (gauss[0], gauss[1], gauss[2]))
+        #N = quad(fp.fit, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], fitParams[i])
+        #bck = quad(bckOnly, gauss[1][0]-Nsigma*gauss[2][0], gauss[1][0]+Nsigma*gauss[2][0], (fitParams[i][0], fitParams[i][1], fitParams[i][2]))
+        counts.append(N[0])
+        #counts.append(N[0]-bck[0])
         measuredPeaks.append(gauss[1])
         errorPeaks.append(gauss[2])
 
     # returns counts per second since each data point wasnt run for equal amount of time
     # runTime is defined at start of function
 
-    return np.divide(np.array(counts), runTime), measuredPeaks, errorPeaks
+    #print(counts)
+    return np.divide(np.array(counts), runTime)*900, measuredPeaks, errorPeaks
 
 
-def kleinNishina(theta,E):
-    g = E/511
-    p1 = (1 + np.cos(theta * np.pi/180)**2)/((1+g*(1-np.cos(theta * np.pi/180)))**2)
-    p2 = (1 + (g**2 * (1-np.cos(theta * np.pi/180))**2)/ ((1+np.cos(theta * np.pi/180)**2)*(1+g*(1-np.cos(theta * np.pi/180)))))
-    return (2.82e-13**2/2)*p1*p2 * 1e27
 
-def thompson(theta):
-    return (2.82e-13**2/2)*(1+np.cos(theta * np.pi/180)**2)* 1e27
 
-def crossSection(counts, theta, ngamma, nelectron):
+def crossSection(counts, theta, ngamma, nelectron, peaks):
 
-    dsigma = counts* 1e27 / (ngamma*nelectron*0.03)
+    efficiency, peak_to_total = eff()
+    intercept, slope, aerr, berr  =  calib.calibration("../data/calib.out")
+    peaks = (peaks - intercept)/(slope)
+
+    dsigma = counts / (ngamma*nelectron)
+    for i in peaks:
+        dsigma /= efficiency(i)
+        dsigma /= peak_to_total(i)
+
+
+    dsigma *= 1e24
+    #dsigma /= 8
     x = np.linspace(theta[0], theta[-1], 100)
-    kn = kleinNishina(x, 662)
-    th = thompson(x)
-    dsigma *= kn[0]/dsigma[0]
+    kn = kleinNishina(x, 662) * 1e28
+    th = thompson(x) * 1e28
+
+    popt, pcov = curve_fit(lambda x, a: fitXS(x, a,E = 662), theta[:-2], dsigma[:-2], p0 = [1e-2])
+
+    #print(popt[0]/((2.82e-15**2 / 2) * 1e28))
+
     plt.plot(theta, dsigma, ls = 'None', marker = 'o', label = "Measured")
     plt.plot(x, kn, "--", label = "Klein-Nishina")
     plt.plot(x, th, ls = "dashdot", label = "Thompson")
-    plt.yscale("log")
+    plt.plot(x, fitXS(x, popt[0], E = 662), ls = "--", label = "Fit")
+    #plt.yscale("log")
+    plt.grid()
     plt.legend()
     plt.xlabel(r"$\theta$ (deg)")
-    plt.ylabel(r"$d\sigma/d\Omega$ (mb)")
+    plt.ylabel(r"$d\sigma/d\Omega$ (b)")
+    plt.tight_layout()
     plt.savefig("plots/differentialCrossSection.png", dpi = 300)
     plt.close()
 
+    return np.sqrt(popt[0] * 2/1e28)
 
 def energy(peaks, peaksError, runs):
+    # peaks = peaks
+    # peaksError = peaksError
+    # runs = runs
     a, b, aerr, berr  =  calib.calibration("../data/calib.out")
     peaks = (peaks - a)/(b*1e3)
     peaksError = (1/b) * np.sqrt(peaksError**2 + aerr + berr*peaks**2) / (1e3)
-    #print(peaksError)
 
-    #peaksError = (peaksError - a)/(b*1e3)
-
-    #print(peaks)
 
     x = 1-np.cos(runs*np.pi/180)
     y = (1/peaks - 1/662).T[0]
@@ -175,12 +189,27 @@ def energy(peaks, peaksError, runs):
     plt.savefig("plots/electronMass.png", dpi = 300)
     plt.close()
 
+    return 1/b1 * 1e3
 
 if __name__ == "__main__":
     #try:
     #matplotlib.rcParams.update({'font.size': 18})
-    runs = np.array([20, 30, 40, 50, 90])
-    N, peaks, peaksError = counts(sys.argv[1])
+    runTime = np.array([900, 1200, 900, 1200, 900, 1200, 1200, 1200, 1200, 1200, 1200])
+    runs = np.array([    20,   25,  30,   35,  40,   50,   60,   70,   80,   90,  100])
+    N, peaks, peaksError = counts(sys.argv[1], runs, runTime)
     #Ngamma()
-    #crossSection(N, runs, Ngamma(), 4e26)
-    energy(np.array(peaks), np.array(peaksError), runs)
+    # in cm i think lol maybe
+    area = (1.5**2*np.pi) * 6.45
+    r_o = crossSection(N, runs, Ngamma()/area, 4e26, peaks)
+    # in keV
+    m_e= energy(np.array(peaks), np.array(peaksError), runs)
+    m_e *= 1e3
+
+    # in eV*s
+    hbar = 6.582e-16
+    # in m/s
+    c = 2.99e8
+    print((m_e*r_o/(hbar*c)))
+    print("Fine structure constant is: 1/{}".format(
+        round(1/(m_e*r_o/(hbar*c)), 1)
+    ))

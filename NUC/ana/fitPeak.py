@@ -10,8 +10,9 @@ def initParam(elem, p = 30, h = 120, peaks = None):
         amps = elem.iloc[peaks].tolist()
     else:
         peaks, _ = find_peaks(elem, height = h, prominence = p)
+        if len(peaks) > 1:
+            peaks = [peaks[0]]
         amps = elem.loc[peaks].tolist()
-        print(amps)
     means = elem.index[peaks]
     sigmas = np.ones_like(amps)*5
     bck = [10, 0, 0]
@@ -25,10 +26,8 @@ def fit(x, *args):
     # anyways, the paramters end up being in an n*3 + 3 array where n = number of peaks
     # array goes like [polynomial coefficients (a + bx + cx^2), amplitude_i, mean_i, stdev_i, amplitude_i+1, ...]
 
-
     if type(args[0]) is np.ndarray:
         args = np.array(args[0], dtype = np.float64)
-
 
     f = np.zeros_like(x, dtype = np.float64)
     gauss = np.array(args[3:], dtype = np.float64).reshape(3, len(args[3:])//3).T
@@ -62,3 +61,7 @@ def wlinear_fit (x,y,w) :
     # Compute chi^2 = \sum w_i (y_i - (a + b * x_i))^2
     chi2 = np.sum (w * (y-(a+b*x))**2)
     return a,b,cov_00,cov_11,cov_01,chi2
+
+
+def gauss(x, a, b, c):
+    return a*np.exp((-(x-b)**2)/ (2*c**2))
