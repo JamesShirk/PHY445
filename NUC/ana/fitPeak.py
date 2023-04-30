@@ -12,10 +12,13 @@ def initParam(elem, p = 30, h = 120, peaks = None):
         peaks, _ = find_peaks(elem, height = h, prominence = p)
         if len(peaks) > 1:
             peaks = [peaks[0]]
-        amps = elem.loc[peaks].tolist()
+        amps = elem.iloc[peaks].tolist()
+    #if "120bcksub" in elem.name or "130bcksub" in elem.name:
+    #    means = [95]
+    #else:
     means = elem.index[peaks]
     sigmas = np.ones_like(amps)*5
-    bck = [10, 0, 0]
+    bck = [10, 0.001, np.average(elem.index)]
     return np.array(list(chain(bck, amps, means, sigmas)), dtype = np.float64)
 
 def fit(x, *args):
@@ -34,7 +37,8 @@ def fit(x, *args):
     for i in gauss:
         f += i[0]*np.exp((-(x - i[1])**2) / (2*i[2]**2))
     #return f + args[0]*np.exp(-args[1]*x +args[2])
-    return f + args[0] + args[1]*x + args[2]*x**2
+    #return f + args[0] + args[1]*x + args[2]*x**2
+    return f + args[0]*np.exp(-args[1]*(x-args[2]))
 
 # taken from stackexchange
 def wlinear_fit (x,y,w) :
